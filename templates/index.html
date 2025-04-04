@@ -1,1 +1,307 @@
 
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>محاسبه حباب سکه و طلا</title>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazir-font@v30.1.0/dist/font-face.css" rel="stylesheet" type="text/css" />
+    <style>
+        @font-face {
+            font-family: 'IRANSans';
+            src: url('https://cdn.fontcdn.ir/Font/Persian/IRANSans/IRANSansWeb.woff') format('woff');
+        }
+        body {
+            font-family: 'IRANSans', 'Vazir', Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 10px;
+            direction: rtl;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 80vh; /* تنظیم ارتفاع برای فشرده‌سازی محتوا */
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            font-size: 20px;
+            margin: 10px 0;
+        }
+        .form-group {
+            margin-bottom: 10px;
+        }
+        label {
+            display: block;
+            margin-bottom: 3px;
+            color: #555;
+            font-size: 14px;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-family: 'IRANSans', 'Vazir', Arial, sans-serif;
+            font-size: 14px;
+        }
+        select option {
+            font-family: 'IRANSans', 'Vazir', Arial, sans-serif;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'IRANSans', 'Vazir', Arial, sans-serif;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+        }
+        .result p {
+            margin: 3px 0;
+        }
+        .error {
+            color: red;
+            text-align: center;
+        }
+        .loading-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            z-index: 1000;
+            display: none;
+        }
+        .footer {
+            margin-top: 10px;
+            padding: 8px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .producer {
+            color: blue; /* رنگ آبی برای "تهیه‌کننده" */
+        }
+        .producer-name {
+            color: red; /* رنگ قرمز برای "علی طاهری" */
+            font-weight: bold;
+        }
+        .telegram-link {
+            color: blue; /* رنگ آبی برای "آدرس تلگرام" */
+        }
+        .telegram-username {
+            color: red; /* رنگ قرمز برای "@a.taheri" */
+            font-weight: bold;
+            text-decoration: none;
+        }
+        .telegram-username:hover {
+            text-decoration: underline;
+        }
+        input::placeholder, select:invalid {
+            color: #aaa;
+            font-family: 'IRANSans', 'Vazir', Arial, sans-serif;
+            font-size: 12px; /* فونت کوچک‌تر برای placeholder */
+        }
+        /* برای نمایش placeholder در select */
+        select:invalid {
+            color: #aaa;
+        }
+        select option:not(:disabled) {
+            color: black;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div>
+            <h1>محاسبه حباب سکه و طلا</h1>
+            <form id="calc-form" method="POST">
+                <div class="form-group">
+                    <label for="ounce_price">قیمت اونس طلا (دلار):</label>
+                    <input type="text" id="ounce_price" name="ounce_price" value="{{ ounce_price }}" placeholder="قیمت اونس را به دلار وارد کنید" required>
+                </div>
+                <div class="form-group">
+                    <label for="dollar_price">قیمت دلار (تومان):</label>
+                    <input type="text" id="dollar_price" name="dollar_price" value="{{ dollar_price }}" placeholder="قیمت دلار را به تومان وارد کنید" required>
+                </div>
+                <div class="form-group">
+                    <label for="item">انتخاب نوع سکه یا طلا:</label>
+                    <select id="item" name="item" required>
+                        <option value="" disabled {% if not selected_item %}selected{% endif %} hidden>طلا یا سکه مورد نظر را انتخاب کنید</option>
+                        {% for item in items %}
+                            <option value="{{ item }}" {% if item == selected_item %}selected{% endif %}>{{ item }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" id="calculate-btn">محاسبه</button>
+            </form>
+
+            <div id="loading-message" class="loading-message">در حال به‌روزرسانی محاسبات...</div>
+
+            <div id="result-container">
+                {% if result %}
+                    <div class="result">
+                        {% if result.error %}
+                            <p class="error">{{ result.error }}</p>
+                        {% else %}
+                            <p><strong>{{ result.item }}</strong></p>
+                            <p>💵 قیمت: {{ result.price }} تومان</p>
+                            <p>⚖️ ارزش ذاتی: {{ result.intrinsic_value }} تومان</p>
+                            <p>🫧 حباب: {{ result.bubble }} تومان</p>
+                            <p>📊 درصد حباب: {{ result.bubble_percentage }}%</p>
+                            <p>💲 دلار محاسباتی: {{ result.calculated_dollar }} تومان</p>
+                            <p>💵 اونس طلا: {{ result.ounce_price }} دلار</p>
+                            <p>💵 دلار آمریکا: {{ result.dollar_price }} تومان</p>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Footer with producer info -->
+        <div class="footer">
+            <span class="producer">
+                تهیه‌کننده: <span class="producer-name">علی طاهری</span>
+            </span>
+            <span class="telegram-link">
+                آدرس تلگرام: <a href="https://t.me/a.taheri" class="telegram-username" target="_blank">a.taheri@</a>
+            </span>
+        </div>
+    </div>
+
+    <script>
+        // Function to format numbers with commas
+        function formatNumberWithCommas(value) {
+            if (!value) return '';
+            // Remove any existing commas and convert to string
+            let num = value.toString().replace(/,/g, '');
+            // Add commas every three digits
+            return num.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        }
+
+        // Function to remove commas
+        function removeCommas(value) {
+            return value.replace(/,/g, '');
+        }
+
+        // Apply formatting on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const ounceInput = document.getElementById('ounce_price');
+            const dollarInput = document.getElementById('dollar_price');
+
+            // Format initial values
+            if (ounceInput.value) {
+                ounceInput.value = formatNumberWithCommas(ounceInput.value);
+            }
+            if (dollarInput.value) {
+                dollarInput.value = formatNumberWithCommas(dollarInput.value);
+            }
+
+            // Clear localStorage only if fields are not set by form submission
+            if (!ounceInput.value) {
+                localStorage.removeItem('ounce_price');
+                ounceInput.value = '';
+            }
+            if (!dollarInput.value) {
+                localStorage.removeItem('dollar_price');
+                dollarInput.value = '';
+            }
+            if (!document.getElementById('item').value) {
+                document.getElementById('item').value = '';
+            }
+
+            // Add event listeners for formatting on input
+            ounceInput.addEventListener('input', function() {
+                let rawValue = removeCommas(this.value);
+                this.value = formatNumberWithCommas(rawValue);
+                localStorage.setItem('ounce_price', rawValue);
+                clearResults();
+            });
+
+            dollarInput.addEventListener('input', function() {
+                let rawValue = removeCommas(this.value);
+                this.value = formatNumberWithCommas(rawValue);
+                localStorage.setItem('dollar_price', rawValue);
+                clearResults();
+            });
+
+            // Remove commas before form submission
+            document.getElementById('calc-form').addEventListener('submit', function() {
+                ounceInput.value = removeCommas(ounceInput.value);
+                dollarInput.value = removeCommas(dollarInput.value);
+                showLoadingMessage();
+            });
+        });
+
+        // Function to show loading message
+        function showLoadingMessage() {
+            const loadingMessage = document.getElementById('loading-message');
+            loadingMessage.style.display = 'block';
+        }
+
+        // Function to hide loading message
+        function hideLoadingMessage() {
+            const loadingMessage = document.getElementById('loading-message');
+            loadingMessage.style.display = 'none';
+        }
+
+        // Function to clear results
+        function clearResults() {
+            const resultContainer = document.getElementById('result-container');
+            resultContainer.innerHTML = '';
+        }
+
+        // Clear results (but not the form fields) on input change
+        document.getElementById('item').addEventListener('change', function() {
+            clearResults();
+        });
+
+        // Hide loading message when the page is fully loaded
+        window.addEventListener('load', function() {
+            hideLoadingMessage();
+        });
+
+        // Hide loading message after form submission (in case of page reload)
+        document.addEventListener('DOMContentLoaded', function() {
+            hideLoadingMessage();
+        });
+    </script>
+</body>
+</html>
